@@ -1,0 +1,64 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Description of the expense"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Total amount paid (including VAT)"
+    },
+    "vat": {
+      "type": "number",
+      "description": "VAT amount (if applicable)"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of the expense"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Food & Dining",
+        "Transport",
+        "Office Supplies",
+        "Travel",
+        "Utilities",
+        "Entertainment",
+        "Healthcare",
+        "Other"
+      ],
+      "description": "Expense category"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL of the uploaded receipt image"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Vendor or merchant name"
+    },
+    "currency": {
+      "type": "string",
+      "default": "GBP",
+      "description": "Currency of the expense"
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this expense is archived"
+    }
+  },
+  "required": [
+    "title",
+    "amount",
+    "date"
+  ]
+}
