@@ -4,6 +4,8 @@ import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import Layout from './components/Layout';
+import AuthScreen from "./components/AuthScreen";
+import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import Home from './pages/Home';
 import AddExpense from './pages/AddExpense';
 import Expenses from './pages/Expenses';
@@ -25,15 +27,34 @@ const AppRoutes = () => {
   );
 };
 
+function AppContent() {
+  const { isAuthenticated, isLoadingAuth } = useAuth();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthScreen />;
+  }
+
+  return <AppRoutes />;
+}
 
 function App() {
   return (
-    <QueryClientProvider client={queryClientInstance}>
-      <Router>
-        <AppRoutes />
-      </Router>
-      <Toaster />
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AppContent />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
   )
 }
 

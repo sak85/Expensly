@@ -1,3 +1,4 @@
+import netlifyIdentity from "netlify-identity-widget";
 const API_ENDPOINT = "/.netlify/functions/expenses";
 
 const normalizeExpense = (expense) => ({
@@ -19,9 +20,11 @@ const normalizeExpense = (expense) => ({
 });
 
 const api = async (path = "", options = {}) => {
+  const token = await netlifyIdentity.currentUser()?.jwt();
   const response = await fetch(`${API_ENDPOINT}${path}`, {
     headers: {
       "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
     ...options,
   });

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Camera, Upload, X, Loader2 } from "lucide-react";
-import { fileToDataUrl } from "@/lib/file-utils";
+import { fileToOptimizedImageDataUrl } from "@/lib/file-utils";
 
 const categories = ["Food & Dining", "Transport", "Office Supplies", "Travel", "Utilities", "Entertainment", "Healthcare", "Other"];
 
@@ -50,7 +50,7 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
   const uploadReceipt = async (file) => {
     setUploading(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await fileToOptimizedImageDataUrl(file);
       handleChange("receipt_url", dataUrl);
     } finally {
       setUploading(false);
@@ -193,7 +193,7 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
           </div>
         )}
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
-        <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       </div>
 
       <Button type="submit" className="w-full h-12 text-base font-semibold rounded-xl" disabled={isSubmitting || uploading}>

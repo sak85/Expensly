@@ -1,5 +1,7 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Receipt, PlusCircle, List, LayoutDashboard, BarChart2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/AuthContext";
 
 const navItems = [
   { path: "/", icon: LayoutDashboard, label: "Home" },
@@ -10,6 +12,7 @@ const navItems = [
 
 export default function Layout() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -22,7 +25,12 @@ export default function Layout() {
             </div>
             <span className="font-display font-bold text-lg tracking-tight">ExpenseSnap</span>
           </Link>
-          <span className="text-xs text-muted-foreground">Offline mode</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground max-w-28 truncate">
+              {user?.email}
+            </span>
+            <Button variant="ghost" size="sm" onClick={logout}>Logout</Button>
+          </div>
         </div>
       </header>
 

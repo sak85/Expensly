@@ -1,7 +1,6 @@
 # Expensly
 
 Expensly is a standalone receipt and expense tracking web app built with React + Vite.
-It no longer depends on Base44 and can be deployed directly to Netlify.
 
 ## Features
 
@@ -33,8 +32,14 @@ npm run build
 ## Data Storage
 
 - Expenses are stored via Netlify Function `/.netlify/functions/expenses`.
-- The function persists data in Netlify Blobs (`expensly/expenses.json`).
+- The function persists user-scoped data in Netlify Blobs (`expensly/users/<user-id>/expenses.json`).
 - Receipt files are still stored as data URLs inside each expense record.
+
+## Authentication
+
+- The app uses Netlify Identity for login/signup.
+- Each authenticated user can access only their own receipts and expenses.
+- In Netlify dashboard, enable **Identity** for your site before production usage.
 
 ## Deploy to Netlify
 

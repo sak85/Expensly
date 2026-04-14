@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Camera, Upload, ScanLine } from "lucide-react";
 import { createWorker } from "tesseract.js";
 import { toast } from "sonner";
-import { fileToDataUrl } from "@/lib/file-utils";
+import { fileToOptimizedImageDataUrl } from "@/lib/file-utils";
 import { parseReceiptText } from "@/lib/receipt-parser";
 
 export default function ReceiptScanner({ onScanComplete }) {
@@ -13,7 +13,7 @@ export default function ReceiptScanner({ onScanComplete }) {
   const processReceipt = async (file) => {
     setIsScanning(true);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await fileToOptimizedImageDataUrl(file);
       const worker = await createWorker("eng");
       const result = await worker.recognize(file);
       await worker.terminate();
@@ -79,7 +79,7 @@ export default function ReceiptScanner({ onScanComplete }) {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.pdf"
+        accept="image/*"
         className="hidden"
         onChange={handleFileChange}
       />
