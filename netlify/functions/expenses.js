@@ -34,11 +34,32 @@ const normalizeExpense = (expense) => ({
   created_at: expense.created_at ?? new Date().toISOString(),
 });
 
-const getUserContext = (event) => {
+const getUserContext = async (event) => {
   const identityUser = event.clientContext?.user;
   if (identityUser?.sub) {
     return { id: identityUser.sub, email: identityUser.email ?? null };
   }
+
+  const authHeader = event.headers?.authorization || event.headers?.Authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice("Bearer ".length);
+    try {
+      const origin =
+        process.env.URL || `https://${event.headers?.["x-forwarded-host"] || event.headers?.host}`;
+      const response = await fetch(`${origin}/.netlify/identity/user`, {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const profile = await response.json();
+        if (profile?.id) {
+          return { id: profile.id, email: profile.email ?? null };
+        }
+      }
+    } catch (error) {
+      console.error("Failed to validate Netlify Identity token", error);
+    }
+  }
+
   if (process.env.NETLIFY_LOCAL === "true") {
     return { id: "local-dev-user", email: "local@example.com" };
   }
@@ -84,7 +105,7 @@ export const handler = async (event) => {
     return json(200, { ok: true });
   }
 
-  const user = getUserContext(event);
+  const user = await getUserContext(event);
   if (!user) {
     return json(401, { error: "Authentication required" });
   }
