@@ -8,7 +8,9 @@ export function AuthProvider({ children }) {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
-    netlifyIdentity.init();
+    netlifyIdentity.init({
+      APIUrl: `${window.location.origin}/.netlify/identity`,
+    });
     setUser(netlifyIdentity.currentUser());
     setIsLoadingAuth(false);
 
