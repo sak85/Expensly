@@ -1,4 +1,4 @@
-import { getStore } from "@netlify/blobs";
+import { connectLambda, getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -101,6 +101,8 @@ const writeExpenses = async (store, userId, expenses) => {
 };
 
 export const handler = async (event) => {
+  connectLambda(event);
+
   if (event.httpMethod === "OPTIONS") {
     return json(200, { ok: true });
   }
