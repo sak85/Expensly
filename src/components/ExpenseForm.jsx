@@ -1,8 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Camera, Upload, X, Loader2 } from "lucide-react";
 import { fileToOptimizedImageDataUrl } from "@/lib/file-utils";
 
@@ -26,6 +24,15 @@ const currencies = [
 ];
 
 export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
+  const scanConfidence = initialData?.extraction_confidence;
+  const scanNotes = initialData?.extraction_notes || {};
+  const lowConfidenceFields = {
+    title: scanConfidence?.title === "low",
+    vendor: scanConfidence?.vendor === "low",
+    vat: scanConfidence?.vat === "low",
+  };
+  const hasLowConfidence = Object.values(lowConfidenceFields).some(Boolean);
+
   const [form, setForm] = useState({
     title: initialData?.title || "",
     amount: initialData?.amount || "",
@@ -45,6 +52,15 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const useVendorAsDescription = () => {
+    if (!form.vendor) return;
+    handleChange("title", form.vendor);
+  };
+
+  const clearVatGuess = () => {
+    handleChange("vat", "");
   };
 
   const uploadReceipt = async (file) => {
@@ -70,21 +86,54 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {scanConfidence && (
+        <div className={`rounded-xl border p-3 ${hasLowConfidence ? "border-amber-300 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/60"}`}>
+          <p className="text-sm font-semibold">Review extracted fields</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            OCR guessed these values. Confirm before saving.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs">
+            <ConfidenceChip label="Description" level={scanConfidence.title} />
+            <ConfidenceChip label="Vendor" level={scanConfidence.vendor} />
+            <ConfidenceChip label="VAT" level={scanConfidence.vat} />
+          </div>
+          {hasLowConfidence && (
+            <p className="mt-2 text-xs text-amber-700">
+              Low confidence fields are highlighted below for quick correction.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="space-y-2">
-        <Label htmlFor="title">Description *</Label>
+        <label htmlFor="title" className="text-sm font-medium leading-none">Description *</label>
         <Input
           id="title"
           placeholder="e.g. Office lunch, Uber ride"
           value={form.title}
           onChange={(e) => handleChange("title", e.target.value)}
           required
-          className="h-11"
+          className={`h-11 ${lowConfidenceFields.title ? "border-amber-400 ring-amber-300 focus-visible:ring-amber-400" : ""}`}
         />
+        {scanConfidence?.title && (
+          <div className="flex items-center justify-between gap-2">
+            <p className={`text-xs ${lowConfidenceFields.title ? "text-amber-700" : "text-muted-foreground"}`}>
+              {scanNotes.title || "Description confidence is estimated from OCR quality."}
+            </p>
+            <button
+              type="button"
+              onClick={useVendorAsDescription}
+              className="text-xs text-primary hover:underline whitespace-nowrap"
+            >
+              Use vendor as description
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Currency */}
       <div className="space-y-2">
-        <Label>Currency</Label>
+        <label className="text-sm font-medium leading-none">Currency</label>
         <select
           value={form.currency}
           onChange={(e) => handleChange("currency", e.target.value)}
@@ -98,29 +147,51 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="amount">Amount *</Label>
+          <label htmlFor="amount" className="text-sm font-medium leading-none">Amount *</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
             <Input id="amount" type="number" step="0.01" placeholder="0.00" value={form.amount} onChange={(e) => handleChange("amount", e.target.value)} required className="h-11 pl-8" />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="date">Date *</Label>
+          <label htmlFor="date" className="text-sm font-medium leading-none">Date *</label>
           <Input id="date" type="date" value={form.date} onChange={(e) => handleChange("date", e.target.value)} required className="h-11" />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="vat">VAT / Tax Amount <span className="text-muted-foreground font-normal">(optional)</span></Label>
+        <label htmlFor="vat" className="text-sm font-medium leading-none">VAT / Tax Amount <span className="text-muted-foreground font-normal">(optional)</span></label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">{currencySymbol}</span>
-          <Input id="vat" type="number" step="0.01" placeholder="0.00" value={form.vat} onChange={(e) => handleChange("vat", e.target.value)} className="h-11 pl-8" />
+          <Input
+            id="vat"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            value={form.vat}
+            onChange={(e) => handleChange("vat", e.target.value)}
+            className={`h-11 pl-8 ${lowConfidenceFields.vat ? "border-amber-400 ring-amber-300 focus-visible:ring-amber-400" : ""}`}
+          />
         </div>
+        {scanConfidence?.vat && (
+          <div className="flex items-center justify-between gap-2">
+            <p className={`text-xs ${lowConfidenceFields.vat ? "text-amber-700" : "text-muted-foreground"}`}>
+              {scanNotes.vat || "VAT confidence is estimated from OCR tax matching."}
+            </p>
+            <button
+              type="button"
+              onClick={clearVatGuess}
+              className="text-xs text-primary hover:underline whitespace-nowrap"
+            >
+              Clear VAT guess
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label>Category</Label>
+          <label className="text-sm font-medium leading-none">Category</label>
           <select
             value={form.category}
             onChange={(e) => handleChange("category", e.target.value)}
@@ -133,31 +204,37 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="vendor">Vendor</Label>
+          <label htmlFor="vendor" className="text-sm font-medium leading-none">Vendor</label>
           <Input
             id="vendor"
             placeholder="Store name"
             value={form.vendor}
             onChange={(e) => handleChange("vendor", e.target.value)}
-            className="h-11"
+            className={`h-11 ${lowConfidenceFields.vendor ? "border-amber-400 ring-amber-300 focus-visible:ring-amber-400" : ""}`}
           />
+          {scanConfidence?.vendor && (
+            <p className={`text-xs ${lowConfidenceFields.vendor ? "text-amber-700" : "text-muted-foreground"}`}>
+              {scanNotes.vendor || "Vendor confidence is estimated from heading line detection."}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Notes</Label>
-        <Textarea
+        <label htmlFor="notes" className="text-sm font-medium leading-none">Notes</label>
+        <textarea
           id="notes"
           placeholder="Any additional details..."
           value={form.notes}
           onChange={(e) => handleChange("notes", e.target.value)}
           rows={2}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
 
       {/* Receipt */}
       <div className="space-y-2">
-        <Label>Receipt</Label>
+        <label className="text-sm font-medium leading-none">Receipt</label>
         {form.receipt_url ? (
           <div className="relative rounded-xl overflow-hidden border border-border bg-muted">
             <img src={form.receipt_url} alt="Receipt" className="w-full max-h-48 object-contain" />
@@ -201,5 +278,19 @@ export default function ExpenseForm({ initialData, onSubmit, isSubmitting }) {
         {isSubmitting ? "Saving..." : "Save Expense"}
       </Button>
     </form>
+  );
+}
+
+function ConfidenceChip({ label, level }) {
+  const styles = {
+    high: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    medium: "bg-sky-100 text-sky-700 border-sky-200",
+    low: "bg-amber-100 text-amber-700 border-amber-200",
+  };
+  const normalizedLevel = level || "low";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-1 font-medium ${styles[normalizedLevel] || styles.low}`}>
+      {label}: {normalizedLevel}
+    </span>
   );
 }

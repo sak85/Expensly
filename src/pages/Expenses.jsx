@@ -198,12 +198,12 @@ export default function Expenses() {
         doc.setFontSize(8); doc.setFont("helvetica", "normal");
         if (exp.date) doc.text(format(new Date(exp.date + "T00:00:00"), "MMMM d, yyyy"), 16, y); y += 8;
         try {
-          const dataUrl = await loadImage(exp.receipt_url);
+          const { dataUrl, format } = await loadImage(exp.receipt_url);
           const imgProps = doc.getImageProperties(dataUrl);
           const maxW = pageWidth - 32;
           const maxH = pageHeight - y - 20;
           const ratio = Math.min(maxW / imgProps.width, maxH / imgProps.height);
-          doc.addImage(dataUrl, "JPEG", 16, y, imgProps.width * ratio, imgProps.height * ratio);
+          doc.addImage(dataUrl, format, 16, y, imgProps.width * ratio, imgProps.height * ratio);
         } catch {
           doc.text("[Receipt image could not be loaded]", 16, y);
         }
@@ -403,15 +403,20 @@ function ExpenseRow({ expense, onClick, onEdit, onDelete, onArchive }) {
 function loadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    const isDataUrl = url.startsWith("data:");
+    if (!isDataUrl) {
+      img.crossOrigin = "anonymous";
+    }
     img.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       canvas.getContext("2d").drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const format = isDataUrl && url.startsWith("data:image/png") ? "PNG" : "JPEG";
+      resolve({ dataUrl, format });
     };
     img.onerror = reject;
-    img.src = url + (url.includes("?") ? "&" : "?") + "_cb=" + Date.now();
+    img.src = isDataUrl ? url : url + (url.includes("?") ? "&" : "?") + "_cb=" + Date.now();
   });
 }
